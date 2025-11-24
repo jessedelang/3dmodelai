@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Humanoid Animation System - Proof of Concept</title>
+    <title>AI Humanoid Animation System</title>
     <style>
         * {
             margin: 0;
@@ -46,11 +46,11 @@
         .subtitle {
             font-size: 0.85em;
             color: #888;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .section {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .section-title {
@@ -58,16 +58,49 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #4fc3f7;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             padding-bottom: 5px;
             border-bottom: 1px solid rgba(79, 195, 247, 0.3);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(79, 195, 247, 0.1);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            background: rgba(79, 195, 247, 0.25);
+            border-color: #4fc3f7;
+        }
+
+        .mode-btn.demo {
+            background: rgba(255, 152, 0, 0.2);
+            border-color: rgba(255, 152, 0, 0.5);
+        }
+
+        .mode-btn.demo:hover {
+            background: rgba(255, 152, 0, 0.4);
+            border-color: #ff9800;
         }
 
         .animation-btn {
             display: block;
             width: 100%;
-            padding: 12px 15px;
-            margin-bottom: 8px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
             background: rgba(79, 195, 247, 0.1);
             border: 1px solid rgba(79, 195, 247, 0.3);
             border-radius: 8px;
@@ -75,13 +108,13 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: left;
-            font-size: 0.95em;
+            font-size: 0.9em;
         }
 
         .animation-btn:hover {
             background: rgba(79, 195, 247, 0.25);
             border-color: #4fc3f7;
-            transform: translateX(5px);
+            transform: translateX(3px);
         }
 
         .animation-btn.active {
@@ -90,21 +123,21 @@
         }
 
         .animation-btn .desc {
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: #888;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         #llm-input {
             width: 100%;
-            height: 120px;
+            height: 140px;
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(79, 195, 247, 0.3);
             border-radius: 8px;
             color: #fff;
             padding: 12px;
-            font-family: 'Consolas', monospace;
-            font-size: 0.85em;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.8em;
             resize: vertical;
             margin-bottom: 10px;
         }
@@ -131,17 +164,32 @@
             box-shadow: 0 5px 20px rgba(79, 195, 247, 0.4);
         }
 
+        #validation-feedback {
+            display: none;
+            background: rgba(255, 87, 34, 0.15);
+            border: 1px solid rgba(255, 87, 34, 0.5);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.75em;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            color: #ffab91;
+        }
+
         .info-box {
             background: rgba(79, 195, 247, 0.1);
             border-radius: 8px;
-            padding: 12px;
-            font-size: 0.85em;
-            line-height: 1.5;
+            padding: 10px;
+            font-size: 0.8em;
+            line-height: 1.4;
         }
 
         .info-box code {
             background: rgba(0, 0, 0, 0.3);
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 4px;
             font-size: 0.9em;
         }
@@ -166,15 +214,66 @@
             font-size: 0.8em;
         }
 
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapsible::after {
+            content: ' ▼';
+            font-size: 0.7em;
+        }
+
+        .collapsible.collapsed::after {
+            content: ' ▶';
+        }
+
+        .collapse-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapse-content.collapsed {
+            max-height: 0 !important;
+        }
+
         .bone-list {
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: #888;
             columns: 2;
-            column-gap: 15px;
+            column-gap: 10px;
+            padding-left: 15px;
         }
 
         .bone-list li {
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+        }
+
+        .scene-commands {
+            font-size: 0.75em;
+            color: #aaa;
+        }
+
+        .scene-commands code {
+            display: block;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+        }
+
+        @media (max-width: 800px) {
+            #container {
+                flex-direction: column;
+            }
+            #control-panel {
+                width: 100%;
+                height: 50vh;
+            }
+            #canvas-container {
+                height: 50vh;
+            }
         }
     </style>
 </head>
@@ -186,89 +285,111 @@
         </div>
         <div id="control-panel">
             <h1>AI Humanoid Animation</h1>
-            <p class="subtitle">LLM-Controllable 3D Character System</p>
+            <p class="subtitle">LLM-Controllable 3D Character System v2</p>
 
             <div class="section">
-                <div class="section-title">Preset Animations</div>
-                <button class="animation-btn" data-animation="idle">
-                    Idle Stance
-                    <div class="desc">Subtle breathing motion</div>
-                </button>
-                <button class="animation-btn" data-animation="wave">
-                    Wave Hello
-                    <div class="desc">Friendly greeting gesture</div>
-                </button>
-                <button class="animation-btn" data-animation="walk">
-                    Walk Cycle
-                    <div class="desc">Basic locomotion</div>
-                </button>
-                <button class="animation-btn" data-animation="sit">
-                    Sit Down
-                    <div class="desc">Transition to seated pose</div>
-                </button>
-                <button class="animation-btn" data-animation="talk">
-                    Talking Gesture
-                    <div class="desc">Expressive hand movements</div>
-                </button>
-                <button class="animation-btn" data-animation="think">
-                    Thinking Pose
-                    <div class="desc">Contemplative stance</div>
-                </button>
-                <button class="animation-btn" data-animation="celebrate">
-                    Celebrate
-                    <div class="desc">Victory/excitement animation</div>
-                </button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">LLM Animation Input</div>
-                <textarea id="llm-input" placeholder='Enter animation JSON or natural language description...
-
-Example:
-{
-  "poses": [
-    {"time": 0, "rightArm": {"shoulder": [0, 0, 0]}},
-    {"time": 1, "rightArm": {"shoulder": [0, 0, -90]}}
-  ]
-}'></textarea>
-                <button id="execute-btn">Execute Animation</button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Semantic Pose Format</div>
-                <div class="info-box">
-                    <p>The system uses a <strong>semantic animation format</strong> that LLMs can generate:</p>
-                    <br>
-                    <p>• <code>time</code>: keyframe timestamp (seconds)</p>
-                    <p>• <code>duration</code>: animation length</p>
-                    <p>• <code>easing</code>: interpolation curve</p>
-                    <p>• Body parts: <code>spine</code>, <code>head</code>, <code>leftArm</code>, <code>rightArm</code>, <code>leftLeg</code>, <code>rightLeg</code></p>
+                <div class="btn-row">
+                    <button class="mode-btn" id="mode-toggle">Multi-Character Mode</button>
+                    <button class="mode-btn demo" id="demo-btn">Run Demo</button>
+                </div>
+                <div class="btn-row">
+                    <button class="mode-btn" id="nav-toggle">Toggle NavMesh</button>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Available Bones</div>
-                <ul class="bone-list">
-                    <li>hips</li>
-                    <li>spine</li>
-                    <li>chest</li>
-                    <li>neck</li>
-                    <li>head</li>
-                    <li>leftShoulder</li>
-                    <li>leftUpperArm</li>
-                    <li>leftLowerArm</li>
-                    <li>leftHand</li>
-                    <li>rightShoulder</li>
-                    <li>rightUpperArm</li>
-                    <li>rightLowerArm</li>
-                    <li>rightHand</li>
-                    <li>leftUpperLeg</li>
-                    <li>leftLowerLeg</li>
-                    <li>leftFoot</li>
-                    <li>rightUpperLeg</li>
-                    <li>rightLowerLeg</li>
-                    <li>rightFoot</li>
-                </ul>
+                <div class="section-title">Preset Animations</div>
+                <button class="animation-btn" data-animation="idle">
+                    Idle <span class="desc">- Breathing motion</span>
+                </button>
+                <button class="animation-btn" data-animation="wave">
+                    Wave <span class="desc">- Greeting gesture</span>
+                </button>
+                <button class="animation-btn" data-animation="walk">
+                    Walk <span class="desc">- Locomotion cycle</span>
+                </button>
+                <button class="animation-btn" data-animation="sit">
+                    Sit <span class="desc">- Seated pose</span>
+                </button>
+                <button class="animation-btn" data-animation="talk">
+                    Talk <span class="desc">- Hand gestures</span>
+                </button>
+                <button class="animation-btn" data-animation="think">
+                    Think <span class="desc">- Contemplative</span>
+                </button>
+                <button class="animation-btn" data-animation="celebrate">
+                    Celebrate <span class="desc">- Victory motion</span>
+                </button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">LLM Command Input</div>
+                <textarea id="llm-input" placeholder='Animation JSON or scene command...
+
+Animation: { "keyframes": [...] }
+Scene: { "action": "move", "character": "alice", "target": {"x": 0, "z": 2} }'></textarea>
+                <button id="execute-btn">Execute (Ctrl+Enter)</button>
+                <div id="validation-feedback"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title collapsible" onclick="this.classList.toggle('collapsed'); this.nextElementSibling.classList.toggle('collapsed')">Scene Commands</div>
+                <div class="collapse-content scene-commands">
+                    <p><strong>spawn</strong> - Add character</p>
+                    <code>{"action":"spawn", "id":"alice", "position":{"x":0,"z":0}}</code>
+
+                    <p><strong>move</strong> - Navigate to position</p>
+                    <code>{"action":"move", "character":"alice", "target":{"x":2,"z":3}}</code>
+
+                    <p><strong>animate</strong> - Play animation</p>
+                    <code>{"action":"animate", "character":"alice", "animation":"wave"}</code>
+
+                    <p><strong>lookAt</strong> - Face target</p>
+                    <code>{"action":"lookAt", "character":"alice", "target":"bob"}</code>
+
+                    <p><strong>speak</strong> - Set dialogue</p>
+                    <code>{"action":"speak", "character":"alice", "text":"Hello!"}</code>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title collapsible" onclick="this.classList.toggle('collapsed'); this.nextElementSibling.classList.toggle('collapsed')">Animation Format</div>
+                <div class="collapse-content">
+                    <div class="info-box">
+                        <p><strong>Semantic format</strong> for LLMs:</p>
+                        <p>• Rotations in <strong>degrees</strong> [x, y, z]</p>
+                        <p>• <code>time</code>: keyframe timestamp</p>
+                        <p>• <code>easing</code>: easeInOut, bounce, elastic</p>
+                        <p>• Body groups: <code>leftArm</code>, <code>rightLeg</code>, <code>torso</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title collapsible collapsed" onclick="this.classList.toggle('collapsed'); this.nextElementSibling.classList.toggle('collapsed')">Available Bones</div>
+                <div class="collapse-content collapsed">
+                    <ul class="bone-list">
+                        <li>hips</li>
+                        <li>spine</li>
+                        <li>chest</li>
+                        <li>neck</li>
+                        <li>head</li>
+                        <li>leftShoulder</li>
+                        <li>leftUpperArm</li>
+                        <li>leftLowerArm</li>
+                        <li>leftHand</li>
+                        <li>rightShoulder</li>
+                        <li>rightUpperArm</li>
+                        <li>rightLowerArm</li>
+                        <li>rightHand</li>
+                        <li>leftUpperLeg</li>
+                        <li>leftLowerLeg</li>
+                        <li>leftFoot</li>
+                        <li>rightUpperLeg</li>
+                        <li>rightLowerLeg</li>
+                        <li>rightFoot</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
