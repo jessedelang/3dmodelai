@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Humanoid Animation System - Proof of Concept</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #control-panel {
+            width: 380px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+            color: #4fc3f7;
+        }
+
+        .subtitle {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4fc3f7;
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(79, 195, 247, 0.3);
+        }
+
+        .animation-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: rgba(79, 195, 247, 0.1);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 0.95em;
+        }
+
+        .animation-btn:hover {
+            background: rgba(79, 195, 247, 0.25);
+            border-color: #4fc3f7;
+            transform: translateX(5px);
+        }
+
+        .animation-btn.active {
+            background: rgba(79, 195, 247, 0.4);
+            border-color: #4fc3f7;
+        }
+
+        .animation-btn .desc {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        #llm-input {
+            width: 100%;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        #llm-input:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+
+        #execute-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 100%);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #execute-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(79, 195, 247, 0.4);
+        }
+
+        .info-box {
+            background: rgba(79, 195, 247, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        .info-box code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        #status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        #fps {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+
+        .bone-list {
+            font-size: 0.8em;
+            color: #888;
+            columns: 2;
+            column-gap: 15px;
+        }
+
+        .bone-list li {
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container">
+            <div id="fps">FPS: <span id="fps-value">60</span></div>
+            <div id="status">Ready</div>
+        </div>
+        <div id="control-panel">
+            <h1>AI Humanoid Animation</h1>
+            <p class="subtitle">LLM-Controllable 3D Character System</p>
+
+            <div class="section">
+                <div class="section-title">Preset Animations</div>
+                <button class="animation-btn" data-animation="idle">
+                    Idle Stance
+                    <div class="desc">Subtle breathing motion</div>
+                </button>
+                <button class="animation-btn" data-animation="wave">
+                    Wave Hello
+                    <div class="desc">Friendly greeting gesture</div>
+                </button>
+                <button class="animation-btn" data-animation="walk">
+                    Walk Cycle
+                    <div class="desc">Basic locomotion</div>
+                </button>
+                <button class="animation-btn" data-animation="sit">
+                    Sit Down
+                    <div class="desc">Transition to seated pose</div>
+                </button>
+                <button class="animation-btn" data-animation="talk">
+                    Talking Gesture
+                    <div class="desc">Expressive hand movements</div>
+                </button>
+                <button class="animation-btn" data-animation="think">
+                    Thinking Pose
+                    <div class="desc">Contemplative stance</div>
+                </button>
+                <button class="animation-btn" data-animation="celebrate">
+                    Celebrate
+                    <div class="desc">Victory/excitement animation</div>
+                </button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">LLM Animation Input</div>
+                <textarea id="llm-input" placeholder='Enter animation JSON or natural language description...
+
+Example:
+{
+  "poses": [
+    {"time": 0, "rightArm": {"shoulder": [0, 0, 0]}},
+    {"time": 1, "rightArm": {"shoulder": [0, 0, -90]}}
+  ]
+}'></textarea>
+                <button id="execute-btn">Execute Animation</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Semantic Pose Format</div>
+                <div class="info-box">
+                    <p>The system uses a <strong>semantic animation format</strong> that LLMs can generate:</p>
+                    <br>
+                    <p>• <code>time</code>: keyframe timestamp (seconds)</p>
+                    <p>• <code>duration</code>: animation length</p>
+                    <p>• <code>easing</code>: interpolation curve</p>
+                    <p>• Body parts: <code>spine</code>, <code>head</code>, <code>leftArm</code>, <code>rightArm</code>, <code>leftLeg</code>, <code>rightLeg</code></p>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Available Bones</div>
+                <ul class="bone-list">
+                    <li>hips</li>
+                    <li>spine</li>
+                    <li>chest</li>
+                    <li>neck</li>
+                    <li>head</li>
+                    <li>leftShoulder</li>
+                    <li>leftUpperArm</li>
+                    <li>leftLowerArm</li>
+                    <li>leftHand</li>
+                    <li>rightShoulder</li>
+                    <li>rightUpperArm</li>
+                    <li>rightLowerArm</li>
+                    <li>rightHand</li>
+                    <li>leftUpperLeg</li>
+                    <li>leftLowerLeg</li>
+                    <li>leftFoot</li>
+                    <li>rightUpperLeg</li>
+                    <li>rightLowerLeg</li>
+                    <li>rightFoot</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
